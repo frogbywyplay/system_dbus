@@ -22,6 +22,7 @@
  */
 
 #include <config.h>
+#include "config.h"
 #include "config-parser-common.h"
 #include "config-parser.h"
 #include "test.h"
@@ -1390,9 +1391,13 @@ append_rule_from_element (BusConfigParser   *parser,
       rule = bus_policy_rule_new (BUS_POLICY_RULE_SEND, allow); 
       if (rule == NULL)
         goto nomem;
-      
+
+#ifdef ENABLE_HARDENED
+      rule->d.send.eavesdrop = 0;
+#else
       if (eavesdrop)
         rule->d.send.eavesdrop = (strcmp (eavesdrop, "true") == 0);
+#endif /* ENABLE_HARDENED */
 
       if (log)
         rule->d.send.log = (strcmp (log, "true") == 0);
@@ -1473,8 +1478,12 @@ append_rule_from_element (BusConfigParser   *parser,
       if (rule == NULL)
         goto nomem;
 
+#ifdef ENABLE_HARDENED
+      rule->d.receive.eavesdrop = 0;
+#else
       if (eavesdrop)
         rule->d.receive.eavesdrop = (strcmp (eavesdrop, "true") == 0);
+#endif
 
       if (receive_requested_reply)
         rule->d.receive.requested_reply = (strcmp (receive_requested_reply, "true") == 0);

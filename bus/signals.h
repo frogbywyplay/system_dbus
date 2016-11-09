@@ -24,9 +24,11 @@
 #ifndef BUS_SIGNALS_H
 #define BUS_SIGNALS_H
 
+#include <config.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-string.h>
 #include <dbus/dbus-sysdeps.h>
+#include "config.h"
 #include "connection.h"
 
 typedef enum
@@ -38,8 +40,10 @@ typedef enum
   BUS_MATCH_DESTINATION             = 1 << 4,
   BUS_MATCH_PATH                    = 1 << 5,
   BUS_MATCH_ARGS                    = 1 << 6,
-  BUS_MATCH_PATH_NAMESPACE          = 1 << 7,
-  BUS_MATCH_CLIENT_IS_EAVESDROPPING = 1 << 8
+  BUS_MATCH_PATH_NAMESPACE          = 1 << 7
+#ifndef ENABLE_HARDENED
+  , BUS_MATCH_CLIENT_IS_EAVESDROPPING = 1 << 8
+#endif
 } BusMatchFlags;
 
 BusMatchRule* bus_match_rule_new   (DBusConnection *matches_go_to);
@@ -65,6 +69,7 @@ dbus_bool_t bus_match_rule_set_arg          (BusMatchRule     *rule,
                                              dbus_bool_t       is_path,
                                              dbus_bool_t       is_namespace);
 
+#ifndef ENABLE_HARDENED
 /* Calling this methods a client declares that it is creating a rule which
  * needs to eavesdrop (e.g., dbus-monitor), any other created rules not
  * setting themselves as eavesdropping won't receive any message not addressed
@@ -72,6 +77,7 @@ dbus_bool_t bus_match_rule_set_arg          (BusMatchRule     *rule,
  * eavedrop is not enabled in policy, this method won't have any effect */
 void bus_match_rule_set_client_is_eavesdropping (BusMatchRule     *rule,
                                                  dbus_bool_t is_eavesdropping);
+#endif /* ENABLE_HARDENED */
 
 BusMatchRule* bus_match_rule_parse (DBusConnection   *matches_go_to,
                                     const DBusString *rule_text,
