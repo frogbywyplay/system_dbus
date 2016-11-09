@@ -1715,6 +1715,18 @@ fi
 
 AM_CONDITIONAL([ENABLE_SPY], [test "x$enable_spy" = xyes])
 
+### Enable hardened
+AC_ARG_ENABLE([hardened],
+  [AS_HELP_STRING([--enable-hardened],
+  [Enable hardening support])],
+  [], [enable_hardened=no])
+
+if test "x$enable_hardened" = xyes; then
+  AC_DEFINE([ENABLE_HARDENED], [1],[Enable hardening support])
+fi
+
+AM_CONDITIONAL([ENABLE_HARDENED], [test "x$enable_hardened" = xyes])
+
 ###
 
 AC_CONFIG_FILES([
@@ -1818,6 +1830,7 @@ echo "
 	Session bus services dir: ${EXPANDED_DATADIR}/dbus-1/services
         'make check' socket dir:  ${TEST_SOCKET_DIR}
         Enable spy:               ${enable_spy}
+        Enable hardening:         ${enable_hardened}
 "
 if test x$have_launchd = xyes; then
         echo "        launchd agent dir:        ${LAUNCHD_AGENT_DIR}"
