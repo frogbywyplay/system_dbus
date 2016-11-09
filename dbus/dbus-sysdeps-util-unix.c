@@ -726,6 +726,16 @@ struct DBusDirIter
 };
 
 /**
+ * Internals of sorted directory iterator
+ */
+struct DBusSortedDirIter
+{
+  struct dirent **d; /**< The dirent** from scandir() */
+  int n; /**< d elements count */
+  int i; /**< The iterator position */
+};
+
+/**
  * Open a directory to iterate over.
  *
  * @param filename the directory name
@@ -763,6 +773,52 @@ _dbus_directory_open (const DBusString *filename,
     }
 
   iter->d = d;
+
+  return iter;
+}
+
+/**
+ * Open a sorted directory to iterate over.
+ *
+ * @param filename the directory name
+ * @param error exception return object or #NULL
+ * @returns new iterator, or #NULL on error
+ */
+DBusSortedDirIter*
+_dbus_sorted_directory_open (const DBusString *filename,
+                             DBusError        *error)
+{
+  struct dirent **d;
+  DBusSortedDirIter *iter;
+  const char *filename_c;
+  int n;
+
+  _DBUS_ASSERT_ERROR_IS_CLEAR (error);
+
+  filename_c = _dbus_string_get_const_data (filename);
+
+  n = scandir (filename_c, &d, NULL, alphasort);
+  if (n < 0)
+    {
+      dbus_set_error (error, _dbus_error_from_errno (errno),
+                      "Failed to scan directory \"%s\": %s",
+                      filename_c,
+                      _dbus_strerror (errno));
+      return NULL;
+    }
+  iter = dbus_new0 (DBusSortedDirIter, 1);
+  if (iter == NULL)
+    {
+      while (n--)
+          free (d[n]);
+      free (d);
+      dbus_set_error (error, DBUS_ERROR_NO_MEMORY,
+                      "Could not allocate memory for directory iterator");
+      return NULL;
+    }
+
+  iter->d = d;
+  iter->n = n;
 
   return iter;
 }
@@ -826,12 +882,73 @@ _dbus_directory_get_next_file (DBusDirIter      *iter,
 }
 
 /**
+ * Get next file in the sorted directory. Will not return "." or
+ * ".." on UNIX. If an error occurs, the contents of "filename" are
+ * undefined. The error is never set if the function succeeds.
+ *
+ * This function is not re-entrant, and not necessarily thread-safe.
+ * Only use it for test code or single-threaded utilities.
+ *
+ * @param iter the iterator
+ * @param filename string to be set to the next file in the dir
+ * @param error return location for error
+ * @returns #TRUE if filename was filled in with a new filename
+ */
+dbus_bool_t
+_dbus_sorted_directory_get_next_file (DBusSortedDirIter      *iter,
+                                      DBusString             *filename,
+                                      DBusError              *error)
+{
+  struct dirent *ent;
+  int err;
+
+  _DBUS_ASSERT_ERROR_IS_CLEAR (error);
+
+ again:
+  if (iter->i == iter->n)
+    return FALSE;
+
+  ent = iter->d[iter->i++];
+
+  if (ent->d_name[0] == '.' &&
+           (ent->d_name[1] == '\0' ||
+            (ent->d_name[1] == '.' && ent->d_name[2] == '\0')))
+    goto again;
+  else
+    {
+      _dbus_string_set_length (filename, 0);
+      if (!_dbus_string_append (filename, ent->d_name))
+        {
+          dbus_set_error (error, DBUS_ERROR_NO_MEMORY,
+                          "No memory to read directory entry");
+          return FALSE;
+        }
+      else
+        {
+          return TRUE;
+        }
+    }
+}
+
+/**
  * Closes a directory iteration.
  */
 void
 _dbus_directory_close (DBusDirIter *iter)
 {
   closedir (iter->d);
+  dbus_free (iter);
+}
+
+/**
+ * Closes a sorted directory iteration.
+ */
+void
+_dbus_sorted_directory_close (DBusSortedDirIter *iter)
+{
+  while (iter->n--)
+    free (iter->d[iter->n]);
+  free (iter->d);
   dbus_free (iter);
 }
 

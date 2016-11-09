@@ -2217,7 +2217,7 @@ include_dir (BusConfigParser   *parser,
   DBusString filename;
   dbus_bool_t retval;
   DBusError tmp_error;
-  DBusDirIter *dir;
+  DBusSortedDirIter *dir;
   char *s;
   
   if (!_dbus_string_init (&filename))
@@ -2228,13 +2228,13 @@ include_dir (BusConfigParser   *parser,
 
   retval = FALSE;
   
-  dir = _dbus_directory_open (dirname, error);
+  dir = _dbus_sorted_directory_open (dirname, error);
 
   if (dir == NULL)
     goto failed;
 
   dbus_error_init (&tmp_error);
-  while (_dbus_directory_get_next_file (dir, &filename, &tmp_error))
+  while (_dbus_sorted_directory_get_next_file (dir, &filename, &tmp_error))
     {
       DBusString full_path;
 
@@ -2307,7 +2307,7 @@ include_dir (BusConfigParser   *parser,
   _dbus_string_free (&filename);
   
   if (dir)
-    _dbus_directory_close (dir);
+    _dbus_sorted_directory_close (dir);
 
   return retval;
 }
