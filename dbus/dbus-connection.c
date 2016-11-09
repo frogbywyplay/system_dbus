@@ -3378,10 +3378,13 @@ reply_handler_timeout (void *data)
  *
  */
 dbus_bool_t
-dbus_connection_send_with_reply (DBusConnection     *connection,
-                                 DBusMessage        *message,
-                                 DBusPendingCall   **pending_return,
-                                 int                 timeout_milliseconds)
+dbus_connection_send_with_reply_and_notify (DBusConnection     *connection,
+                                            DBusMessage        *message,
+                                            DBusPendingCall   **pending_return,
+                                            DBusPendingCallNotifyFunction function,
+                                            void               *user_data,
+                                            DBusFreeFunction    free_user_data,
+                                            int                 timeout_milliseconds)
 {
   DBusPendingCall *pending;
   dbus_int32_t serial = -1;
@@ -3447,6 +3450,9 @@ dbus_connection_send_with_reply (DBusConnection     *connection,
 						      pending))
     goto error;
  
+  if (pending && (!dbus_pending_call_set_notify (pending, function, user_data, free_user_data)))
+    goto error;
+
   if (!_dbus_connection_send_unlocked_no_update (connection, message, NULL))
     {
       _dbus_connection_detach_pending_call_and_unlock (connection,
@@ -3480,6 +3486,18 @@ dbus_connection_send_with_reply (DBusConnection     *connection,
   dbus_pending_call_unref (pending);
   return FALSE;
 }
+
+
+dbus_bool_t
+dbus_connection_send_with_reply (DBusConnection     *connection,
+                                 DBusMessage        *message,
+                                 DBusPendingCall   **pending_return,
+                                 int                 timeout_milliseconds)
+{
+       return dbus_connection_send_with_reply_and_notify(connection, message, pending_return,
+                                                         NULL, NULL, NULL, timeout_milliseconds);
+}
+
 
 /**
  * Sends a message and blocks a certain time period while waiting for

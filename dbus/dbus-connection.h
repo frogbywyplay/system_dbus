@@ -225,6 +225,14 @@ dbus_bool_t        dbus_connection_send                         (DBusConnection 
                                                                  DBusMessage                *message,
                                                                  dbus_uint32_t              *client_serial);
 DBUS_EXPORT
+dbus_bool_t        dbus_connection_send_with_reply_and_notify   (DBusConnection             *connection,
+                                                                 DBusMessage                *message,
+                                                                 DBusPendingCall           **pending_return,
+                                                                 DBusPendingCallNotifyFunction  function,
+                                                                 void                       *user_data,
+                                                                 DBusFreeFunction            free_user_data,
+                                                                 int                         timeout_milliseconds);
+DBUS_EXPORT
 dbus_bool_t        dbus_connection_send_with_reply              (DBusConnection             *connection,
                                                                  DBusMessage                *message,
                                                                  DBusPendingCall           **pending_return,
