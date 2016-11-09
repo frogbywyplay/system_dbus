@@ -23,6 +23,7 @@
  */
 
 #include <config.h>
+#include "config.h"
 #include "dbus-sysdeps.h"
 #include "dbus-sysdeps-unix.h"
 #include "dbus-internals.h"
@@ -49,7 +50,9 @@
 #include <sys/socket.h>
 #include <dirent.h>
 #include <sys/un.h>
+#ifndef ENABLE_HARDENED
 #include <syslog.h>
+#endif
 
 #ifdef HAVE_SYS_SYSLIMITS_H
 #include <sys/syslimits.h>
@@ -512,11 +515,13 @@ _dbus_rlimit_free (DBusRLimit *lim)
 void
 _dbus_init_system_log (void)
 {
+#ifndef ENABLE_HARDENED
 #if HAVE_DECL_LOG_PERROR
   openlog ("dbus", LOG_PID | LOG_PERROR, LOG_DAEMON);
 #else
   openlog ("dbus", LOG_PID, LOG_DAEMON);
 #endif
+#endif /* ! ENABLE_HARDENED */
 }
 
 /**
@@ -530,6 +535,10 @@ _dbus_init_system_log (void)
 void
 _dbus_system_log (DBusSystemLogSeverity severity, const char *msg, ...)
 {
+#ifdef ENABLE_HARDENED
+  (void) severity;
+  (void) msg;
+#else
   va_list args;
 
   va_start (args, msg);
@@ -537,6 +546,7 @@ _dbus_system_log (DBusSystemLogSeverity severity, const char *msg, ...)
   _dbus_system_logv (severity, msg, args);
 
   va_end (args);
+#endif /* ENABLE_HARDENED */
 }
 
 /**
@@ -552,6 +562,11 @@ _dbus_system_log (DBusSystemLogSeverity severity, const char *msg, ...)
 void
 _dbus_system_logv (DBusSystemLogSeverity severity, const char *msg, va_list args)
 {
+#ifdef ENABLE_HARDENED
+  (void) severity;
+  (void) msg;
+  (void) args;
+#else
   int flags;
   switch (severity)
     {
@@ -585,6 +600,7 @@ _dbus_system_logv (DBusSystemLogSeverity severity, const char *msg, va_list args
 
   if (severity == DBUS_SYSTEM_LOG_FATAL)
     exit (1);
+#endif /* ENABLE_HARDENED */
 }
 
 /** Installs a UNIX signal handler
