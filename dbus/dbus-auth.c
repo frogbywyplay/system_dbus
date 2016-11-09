@@ -22,6 +22,7 @@
  */
 
 #include <config.h>
+#include "config.h"
 #include "dbus-auth.h"
 #include "dbus-string.h"
 #include "dbus-list.h"
@@ -758,7 +759,10 @@ sha1_handle_second_client_response (DBusAuth         *auth,
 
   _dbus_verbose ("%s: authenticated client using DBUS_COOKIE_SHA1\n",
                  DBUS_AUTH_NAME (auth));
-  
+
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+  _dbus_keyring_delete(auth->keyring, NULL);
+#endif
   retval = TRUE;
   
  out_3:
@@ -2312,7 +2316,11 @@ _dbus_auth_client_new (void)
 
   /* Start the auth conversation by sending AUTH for our default
    * mechanism */
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+  if (!send_auth (auth, &all_mechanisms[1]))
+#else
   if (!send_auth (auth, &all_mechanisms[0]))
+#endif
     {
       _dbus_auth_unref (auth);
       return NULL;

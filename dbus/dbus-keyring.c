@@ -376,6 +376,32 @@ add_new_key (DBusKey  **keys_p,
   return retval;
 }
 
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+/**
+ * delete keyring file.
+ *
+ * @param keyring : pointer to keyring for cookie/folder delete.
+ * @param error return location for errors.
+ * @returns #FALSE on failure
+ */
+dbus_bool_t _dbus_keyring_delete(DBusKeyring *keyring, DBusError *error)
+{
+    dbus_bool_t delete_result = 0;
+
+    if (!keyring)
+    {
+        return (TRUE);
+    }
+    _dbus_keyring_lock(keyring);
+    delete_result = _dbus_delete_file(&keyring->filename, error);
+    _dbus_keyring_unlock(keyring);
+
+    _dbus_delete_directory(&keyring->directory, error);
+
+    return (delete_result);
+}
+#endif /* ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION */
+
 /**
  * Reloads the keyring file, optionally adds one new key to the file,
  * removes all expired keys from the file iff a key was added, then
@@ -406,10 +432,16 @@ _dbus_keyring_reload (DBusKeyring *keyring,
   DBusError tmp_error;
 
   _DBUS_ASSERT_ERROR_IS_CLEAR (error);
-  
+
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+  if (!_dbus_check_dir_rights(&keyring->directory, error,
+            _dbus_credentials_get_unix_uid(keyring->credentials)))
+    return FALSE;
+#else
   if (!_dbus_check_dir_is_private_to_user (&keyring->directory, error))
     return FALSE;
-    
+#endif /* ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION */
+
   if (!_dbus_string_init (&contents))
     {
       dbus_set_error (error, DBUS_ERROR_NO_MEMORY, NULL);
@@ -605,6 +637,12 @@ _dbus_keyring_reload (DBusKeyring *keyring,
       if (!_dbus_string_save_to_file (&contents, &keyring->filename,
                                       FALSE, error))
         goto out;
+
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+      if (!_dbus_make_file_only_user_group_readable (&keyring->filename,
+                      error, _dbus_credentials_get_unix_uid(keyring->credentials)))
+          goto out;
+#endif
     }
 
   if (keyring->keys)
@@ -811,6 +849,16 @@ _dbus_keyring_new_for_credentials (DBusCredentials  *credentials,
    * unless someone else manages to create it
    */
   dbus_error_init (&tmp_error);
+
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+  if (credentials && !_dbus_create_directory_for_authentication (&keyring->directory,
+                               &tmp_error, _dbus_credentials_get_unix_uid(credentials)))
+    {
+      _dbus_verbose ("Creating keyring directory: %s\n",
+                     tmp_error.message);
+      dbus_error_free (&tmp_error);
+    }
+#else
   if (!_dbus_create_directory (&keyring->directory,
                                &tmp_error))
     {
@@ -818,6 +866,7 @@ _dbus_keyring_new_for_credentials (DBusCredentials  *credentials,
                      tmp_error.message);
       dbus_error_free (&tmp_error);
     }
+#endif /* ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION */
 
   _dbus_string_free (&ringdir);
   

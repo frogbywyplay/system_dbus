@@ -320,6 +320,11 @@ void _dbus_get_real_time (long *tv_sec,
  */
 dbus_bool_t    _dbus_create_directory        (const DBusString *filename,
                                               DBusError        *error);
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+dbus_bool_t    _dbus_create_directory_for_authentication (const DBusString *filename,
+                                              DBusError        *error, dbus_uid_t client_uid);
+#endif
+
 dbus_bool_t    _dbus_delete_directory        (const DBusString *filename,
 					      DBusError        *error);
 
@@ -357,6 +362,12 @@ void               _dbus_sorted_directory_close         (DBusSortedDirIter *iter
 
 dbus_bool_t  _dbus_check_dir_is_private_to_user    (DBusString *dir,
                                                     DBusError *error);
+
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+dbus_bool_t _dbus_check_dir_rights (DBusString *dir,
+                                                    DBusError *error,
+                                                    dbus_uid_t client_uid);
+#endif
 
 void _dbus_fd_set_close_on_exec (intptr_t fd);
 

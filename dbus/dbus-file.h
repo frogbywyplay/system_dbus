@@ -25,6 +25,7 @@
 #ifndef DBUS_FILE_H
 #define DBUS_FILE_H
 
+#include "config.h"
 //#include <dbus/dbus-types.h>
 #include <dbus/dbus-string.h>
 #include <dbus/dbus-errors.h>
@@ -47,6 +48,13 @@ dbus_bool_t _dbus_string_save_to_file (const DBusString *str,
                                        const DBusString *filename,
                                        dbus_bool_t       world_readable,
                                        DBusError        *error);
+
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+dbus_bool_t
+_dbus_make_file_only_user_group_readable(const DBusString *filename,
+                               DBusError *error,
+                               unsigned long client_uid);
+#endif /* ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION */
 
 dbus_bool_t _dbus_make_file_world_readable   (const DBusString *filename,
                                               DBusError *error);
