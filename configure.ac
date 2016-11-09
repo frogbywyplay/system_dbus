@@ -1703,6 +1703,20 @@ if test "x$enable_stats" = xyes; then
     [Define to enable bus daemon usage statistics])
 fi
 
+### Enable spy
+AC_ARG_ENABLE([spy],
+  [AS_HELP_STRING([--enable-spy],
+  [enable spy])],
+  [], [enable_spy=no])
+
+if test "x$enable_spy" = xyes; then
+  AC_DEFINE([ENABLE_SPY], [1],[Define to enable spy])
+fi
+
+AM_CONDITIONAL([ENABLE_SPY], [test "x$enable_spy" = xyes])
+
+###
+
 AC_CONFIG_FILES([
 Doxyfile
 dbus/versioninfo.rc
@@ -1803,6 +1817,7 @@ echo "
 	System bus user:          ${DBUS_USER}
 	Session bus services dir: ${EXPANDED_DATADIR}/dbus-1/services
         'make check' socket dir:  ${TEST_SOCKET_DIR}
+        Enable spy:               ${enable_spy}
 "
 if test x$have_launchd = xyes; then
         echo "        launchd agent dir:        ${LAUNCHD_AGENT_DIR}"

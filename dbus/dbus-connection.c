@@ -22,6 +22,7 @@
  */
 
 #include <config.h>
+#include "config.h"
 #include "dbus-shared.h"
 #include "dbus-connection.h"
 #include "dbus-list.h"
@@ -44,6 +45,9 @@
 #include "dbus-threads-internal.h"
 #include "dbus-bus.h"
 #include "dbus-marshal-basic.h"
+#ifdef ENABLE_SPY
+#include "dbus-spy.h"
+#endif
 
 #ifdef DBUS_DISABLE_CHECKS
 #define TOOK_LOCK_CHECK(connection)
@@ -4595,6 +4599,10 @@ dbus_connection_dispatch (DBusConnection *connection)
     }
 
   message = message_link->data;
+
+#ifdef ENABLE_SPY
+  _dbus_spy_dump_message (message, 0);
+#endif
 
   _dbus_verbose (" dispatching message %p (%s %s %s '%s')\n",
                  message,
