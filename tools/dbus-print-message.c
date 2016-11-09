@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include "config.h"
 
+#ifndef ENABLE_HARDENED
 static const char*
 type_to_name (int message_type)
 {
@@ -353,10 +354,15 @@ print_iter (DBusMessageIter *iter, dbus_bool_t literal, int depth)
 	}
     } while (dbus_message_iter_next (iter));
 }
+#endif /* !ENABLE_HARDENED */
 
 void
 print_message (DBusMessage *message, dbus_bool_t literal)
 {
+#ifdef ENABLE_HARDENED
+  (void) message;
+  (void) literal;
+#else
   DBusMessageIter iter;
   const char *sender;
   const char *destination;
@@ -404,6 +410,6 @@ print_message (DBusMessage *message, dbus_bool_t literal)
   dbus_message_iter_init (message, &iter);
   print_iter (&iter, literal, 1);
   fflush (stdout);
-  
+#endif /* !ENABLE_HARDENED */
 }
 
