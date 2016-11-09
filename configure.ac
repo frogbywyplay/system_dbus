@@ -1735,8 +1735,12 @@ AC_ARG_ENABLE([dbus-cookie-sha1-authentication],
 
 if test "x$enable_dbus_cookie_sha1_authentication" = xyes; then
   AC_DEFINE([ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION], [1],[Enable hardening support])
+  DBUS_AUTH="DBUS_COOKIE_SHA1"
+else
+  DBUS_AUTH="EXTERNAL"
 fi
 
+AC_SUBST(DBUS_AUTH)
 AM_CONDITIONAL([ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION], [test "x$enable_dbus_cookie_sha1_authentication" = xyes])
 
 ###
