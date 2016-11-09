@@ -24,7 +24,9 @@
 #ifndef BUS_DRIVER_H
 #define BUS_DRIVER_H
 
+#include <config.h>
 #include <dbus/dbus.h>
+#include "config.h"
 #include "connection.h"
 
 void        bus_driver_remove_connection     (DBusConnection *connection);
@@ -45,8 +47,9 @@ dbus_bool_t bus_driver_send_service_owner_changed  (const char     *service_name
 						    const char     *new_owner,
 						    BusTransaction *transaction,
 						    DBusError      *error);
+#ifndef ENABLE_HARDENED
 dbus_bool_t bus_driver_generate_introspect_string  (DBusString *xml);
-
+#endif
 
 
 #endif /* BUS_DRIVER_H */

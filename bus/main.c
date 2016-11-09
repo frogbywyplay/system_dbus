@@ -22,6 +22,7 @@
  */
 
 #include <config.h>
+#include "config.h"
 #include "bus.h"
 #include "driver.h"
 #include <dbus/dbus-internals.h>
@@ -131,7 +132,11 @@ signal_handler (int sig)
 static void
 usage (void)
 {
+#ifdef ENABLE_HARDENED
+  fprintf (stderr, DBUS_DAEMON_NAME " [--version] [--session] [--system] [--config-file=FILE] [--print-address[=DESCRIPTOR]] [--print-pid[=DESCRIPTOR]] [--fork] [--nofork] [--address=ADDRESS] [--systemd-activation] [--nopidfile]\n");
+#else
   fprintf (stderr, DBUS_DAEMON_NAME " [--version] [--session] [--system] [--config-file=FILE] [--print-address[=DESCRIPTOR]] [--print-pid[=DESCRIPTOR]] [--fork] [--nofork] [--introspect] [--address=ADDRESS] [--systemd-activation] [--nopidfile]\n");
+#endif
   exit (1);
 }
 
@@ -149,6 +154,9 @@ version (void)
 static void
 introspect (void)
 {
+#ifdef ENABLE_HARDENED
+  fprintf (stderr, "Introspection is disabled.\n");
+#else
   DBusString xml;
   const char *v_STRING;
 
@@ -169,7 +177,9 @@ introspect (void)
  oom:
   _dbus_warn ("Can not introspect - Out of memory\n");
   exit (1);
+#endif /* ENABLE_HARDENED */
 }
+
 
 static void
 check_two_config_files (const DBusString *config_file,
