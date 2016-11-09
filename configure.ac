@@ -1727,6 +1727,18 @@ fi
 
 AM_CONDITIONAL([ENABLE_HARDENED], [test "x$enable_hardened" = xyes])
 
+### Enable dbus cookie sha1 authentication
+AC_ARG_ENABLE([dbus-cookie-sha1-authentication],
+  [AS_HELP_STRING([--enable-dbus-cookie-sha1-authentication],
+  [Enable hardening support])],
+  [], [enable_dbus_cookie_sha1_authentication=no])
+
+if test "x$enable_dbus_cookie_sha1_authentication" = xyes; then
+  AC_DEFINE([ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION], [1],[Enable hardening support])
+fi
+
+AM_CONDITIONAL([ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION], [test "x$enable_dbus_cookie_sha1_authentication" = xyes])
+
 ###
 
 AC_CONFIG_FILES([
@@ -1831,6 +1843,7 @@ echo "
         'make check' socket dir:  ${TEST_SOCKET_DIR}
         Enable spy:               ${enable_spy}
         Enable hardening:         ${enable_hardened}
+        Enable sha1 authentication: ${enable_dbus_cookie_sha1_authentication}
 "
 if test x$have_launchd = xyes; then
         echo "        launchd agent dir:        ${LAUNCHD_AGENT_DIR}"
