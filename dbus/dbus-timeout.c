@@ -39,7 +39,7 @@
  */
 struct DBusTimeout
 {
-  int refcount;                                /**< Reference count */
+  DBusAtomic refcount;                                /**< Reference count */
   int interval;                                /**< Timeout interval in milliseconds. */
 
   DBusTimeoutHandler handler;                  /**< Timeout handler. */
@@ -71,7 +71,7 @@ _dbus_timeout_new (int                 interval,
   if (timeout == NULL)
     return NULL;
   
-  timeout->refcount = 1;
+  _dbus_atomic_inc (&timeout->refcount);
   timeout->interval = interval;
 
   timeout->handler = handler;
@@ -92,7 +92,7 @@ _dbus_timeout_new (int                 interval,
 DBusTimeout *
 _dbus_timeout_ref (DBusTimeout *timeout)
 {
-  timeout->refcount += 1;
+  _dbus_atomic_inc (&timeout->refcount);
 
   return timeout;
 }
@@ -106,11 +106,12 @@ _dbus_timeout_ref (DBusTimeout *timeout)
 void
 _dbus_timeout_unref (DBusTimeout *timeout)
 {
+  dbus_int32_t old_value;
   _dbus_assert (timeout != NULL);
   _dbus_assert (timeout->refcount > 0);
   
-  timeout->refcount -= 1;
-  if (timeout->refcount == 0)
+  old_value = _dbus_atomic_dec (&timeout->refcount);
+  if (old_value == 1)
     {
       dbus_timeout_set_data (timeout, NULL, NULL); /* call free_data_function */
 
@@ -447,7 +448,7 @@ dbus_timeout_set_data (DBusTimeout      *timeout,
 		       void             *data,
 		       DBusFreeFunction  free_data_function)
 {
-  if (timeout->free_data_function != NULL)
+  if (timeout->free_data_function != NULL && timeout->data != 0xFFFFFFFF)
     (* timeout->free_data_function) (timeout->data);
 
   timeout->data = data;
