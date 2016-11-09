@@ -22,6 +22,7 @@
  *
  */
 
+#define _GNU_SOURCE
 #include <config.h>
 #include "config.h"
 #include "dbus-sysdeps.h"
@@ -47,6 +48,9 @@
 #include <sys/resource.h>
 #endif
 #include <grp.h>
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+#include <pwd.h>
+#endif
 #include <sys/socket.h>
 #include <dirent.h>
 #include <sys/un.h>
@@ -317,6 +321,109 @@ _dbus_verify_daemon_user (const char *user)
 
 /* The HAVE_LIBAUDIT case lives in selinux.c */
 #ifndef HAVE_LIBAUDIT
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+
+/**
+ * Set and switch the group identify with getresgid
+ *
+ * @param groupname the groupname given
+ * @returns 0 if ok
+ */
+static int __dbus_set_gid(const char *groupname,
+                          DBusError  *error)
+{
+    struct group *result;
+    gid_t rgid, egid, sgid;
+
+    if (!(result = getgrnam(groupname)))
+      {
+        dbus_set_error (error, _dbus_error_from_errno (errno),
+                        "getgrnam failure for group '%s' : %s",
+                        groupname, _dbus_strerror (errno));
+        return 1;
+      }
+
+    if (setresgid(result->gr_gid, result->gr_gid, result->gr_gid))
+      {
+        dbus_set_error (error, _dbus_error_from_errno (errno),
+                        "setresgid failure for group '%s' : %s",
+                        groupname, _dbus_strerror (errno));
+        return 1;
+      }
+
+    if (getresgid(&rgid, &egid, &sgid))
+      {
+        dbus_set_error (error, _dbus_error_from_errno (errno),
+                        "getresuid failure for group '%s' : %s",
+                        groupname, _dbus_strerror (errno));
+        return 1;
+      }
+
+    if ((rgid != result->gr_gid) || (egid != result->gr_gid) || (sgid != result->gr_gid))
+      {
+        dbus_set_error (error, DBUS_ERROR_FAILED,
+                        "Failure of group switching for '%s'",
+                        groupname);
+        return 1;
+      }
+
+    return 0;
+}
+
+/**
+ * Set and switch the user identify with initgroups and getresuid
+ *
+ * @param username the username given
+ * @returns 0 if ok
+ */
+static int __dbus_set_uid(const char *username,
+                          DBusError  *error)
+{
+    struct passwd *result;
+    uid_t ruid, euid, suid;
+
+    if (!(result = getpwnam(username)))
+      {
+        dbus_set_error (error, _dbus_error_from_errno (errno),
+                        "getpwnam failure for user '%s' : %s",
+                        username, _dbus_strerror (errno));
+        return 1;
+      }
+
+    if (initgroups(result->pw_name, result->pw_gid))
+      {
+        dbus_set_error (error, _dbus_error_from_errno (errno),
+                        "initgroups failure for user '%s': %s",
+                        username, _dbus_strerror (errno));
+        return 1;
+      }
+
+    if (setresuid(result->pw_uid, result->pw_uid, result->pw_uid))
+      {
+        dbus_set_error (error, _dbus_error_from_errno (errno),
+                        "setresuid failure for user '%s' : %s",
+                        username, _dbus_strerror (errno));
+        return 1;
+      }
+
+    if (getresuid(&ruid, &euid, &suid))
+      {
+        dbus_set_error (error, _dbus_error_from_errno (errno),
+                        "getresuid failure for user '%s' : %s",
+                        username, _dbus_strerror (errno));
+        return 1;
+      }
+
+    if ((ruid != result->pw_uid) || (euid != result->pw_uid) || (suid != result->pw_uid))
+      {
+        dbus_set_error (error, DBUS_ERROR_FAILED,
+                        "Failure of user switching for '%s'",
+                        username);
+        return 1;
+      }
+    return 0;
+}
+
 /**
  * Changes the user and group the bus is running as.
  *
@@ -324,6 +431,31 @@ _dbus_verify_daemon_user (const char *user)
  * @param error return location for errors
  * @returns #FALSE on failure
  */
+dbus_bool_t
+_dbus_change_to_daemon_user  (const char    *user,
+                              DBusError     *error)
+{
+  const char *group = user;
+
+  if (__dbus_set_gid(group, error))
+    {
+      dbus_set_error (error, DBUS_ERROR_FAILED,
+                      "Failed to set GID to '%s'", group);
+      return FALSE;
+    }
+
+  if (__dbus_set_uid(user, error))
+    {
+      dbus_set_error (error, DBUS_ERROR_FAILED,
+                      "Failed to set UID to '%s'", user);
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+#else
+
 dbus_bool_t
 _dbus_change_to_daemon_user  (const char    *user,
                               DBusError     *error)
@@ -374,6 +506,7 @@ _dbus_change_to_daemon_user  (const char    *user,
 
   return TRUE;
 }
+#endif /* ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION */
 #endif /* !HAVE_LIBAUDIT */
 
 #ifdef HAVE_SETRLIMIT
