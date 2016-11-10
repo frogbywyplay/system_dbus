@@ -16,6 +16,7 @@ bin_PROGRAMS = \
 	dbus-monitor \
 	dbus-send \
 	dbus-request-name \
+	dbus-wait-dbus \
 	$(NULL)
 
 if DBUS_UNIX
@@ -49,6 +50,9 @@ endif
 dbus_request_name_SOURCES= 			\
 	dbus-request-name.c
 
+dbus_wait_dbus_SOURCES= 			\
+	dbus-wait-dbus.c
+
 dbus_cleanup_sockets_SOURCES=			\
 	dbus-cleanup-sockets.c
 
@@ -73,6 +77,10 @@ dbus_launch_LDADD = \
 	$(NULL)
 
 dbus_request_name_LDADD = \
+	$(top_builddir)/dbus/libdbus-1.la \
+	$(NULL)
+
+dbus_wait_dbus_LDADD = \
 	$(top_builddir)/dbus/libdbus-1.la \
 	$(NULL)
 
