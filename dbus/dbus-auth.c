@@ -340,6 +340,17 @@ _dbus_auth_new (int size)
 {
   DBusAuth *auth;
   
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+  static DBusAtomic *counter = NULL;
+
+  if (counter == NULL) {
+    counter = dbus_new0 (DBusAtomic, 1);
+
+    if (counter == NULL)
+      goto  enomem_0;
+  }
+#endif /* ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION */
+
   auth = dbus_malloc0 (size);
   if (auth == NULL)
     return NULL;
@@ -375,6 +386,13 @@ _dbus_auth_new (int size)
   /* default context if none is specified */
   if (!_dbus_string_append (&auth->context, "org_freedesktop_general"))
     goto enomem_5;
+
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+  _dbus_atomic_inc (counter);
+
+  if (!_dbus_string_append_int (&auth->context, _dbus_atomic_get (counter)))
+    goto enomem_5;
+#endif /* ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION */
 
   auth->credentials = _dbus_credentials_new ();
   if (auth->credentials == NULL)
