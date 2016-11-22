@@ -110,6 +110,12 @@ dbus_daemon_LDADD=					\
 	$(EFENCE)					\
 	$(DBUS_BUS_LIBS)
 
+if ENABLE_LXC_GENESIS
+dbus_daemon_LDADD+=$(lxc_genesis_core_LIBS)
+dbus_daemon_CFLAGS=-fPIE
+dbus_daemon_LDFLAGS=-pie
+endif ENABLE_LXC_GENESIS
+
 LAUNCH_HELPER_SOURCES=				\
 	$(XML_SOURCES)				\
 	config-parser-common.c			\
@@ -133,6 +139,10 @@ dbus_daemon_launch_helper_LDADD=		\
 	$(top_builddir)/dbus/libdbus-internal.la \
 	$(DBUS_LAUNCHER_LIBS)
 
+if ENABLE_LXC_GENESIS
+dbus_daemon_launch_helper_LDADD+=$(lxc_genesis_core_LIBS)
+endif ENABLE_LXC_GENESIS
+
 ## we build another binary so we can do the launch testing without root privs.
 ## DO NOT INSTALL THIS FILE
 dbus_daemon_launch_helper_test_SOURCES=		\
@@ -142,6 +152,10 @@ dbus_daemon_launch_helper_test_SOURCES=		\
 dbus_daemon_launch_helper_test_LDADD=		\
 	$(top_builddir)/dbus/libdbus-internal.la \
 	$(DBUS_LAUNCHER_LIBS)
+
+if ENABLE_LXC_GENESIS
+dbus_daemon_launch_helper_test_LDADD+=$(lxc_genesis_core_LIBS)
+endif ENABLE_LXC_GENESIS
 
 dbus_daemon_launch_helper_test_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
@@ -156,6 +170,10 @@ bus_test_launch_helper_SOURCES=		\
 bus_test_launch_helper_LDADD=		\
 	$(top_builddir)/dbus/libdbus-internal.la \
 	$(DBUS_LAUNCHER_LIBS)
+
+if ENABLE_LXC_GENESIS
+bus_test_launch_helper_LDADD+=$(lxc_genesis_core_LIBS)
+endif ENABLE_LXC_GENESIS
 
 bus_test_launch_helper_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
@@ -201,11 +219,19 @@ bus_test_system_SOURCES=			\
 
 bus_test_system_LDADD=$(top_builddir)/dbus/libdbus-internal.la $(DBUS_BUS_LIBS)
 
+if ENABLE_LXC_GENESIS
+bus_test_system_LDADD+=$(lxc_genesis_core_LIBS)
+endif ENABLE_LXC_GENESIS
+
 bus_test_SOURCES=				\
 	$(BUS_SOURCES)				\
 	test-main.c
 
 bus_test_LDADD=$(top_builddir)/dbus/libdbus-internal.la $(DBUS_BUS_LIBS)
+
+if ENABLE_LXC_GENESIS
+bus_test_LDADD+=$(lxc_genesis_core_LIBS)
+endif ENABLE_LXC_GENESIS
 
 ## mop up the gcov files
 clean-local:

@@ -1727,6 +1727,19 @@ fi
 
 AM_CONDITIONAL([ENABLE_HARDENED], [test "x$enable_hardened" = xyes])
 
+### Enable lxc-genesis
+AC_ARG_ENABLE([lxc-genesis],
+  [AS_HELP_STRING([--enable-lxc-genesis],
+  [Enable usage of lxc-genesis library to switch user/group and apply some linux hardening rules])],
+  [], [enable_lxc_genesis=no])
+
+if test "x$enable_lxc_genesis" = xyes; then
+  PKG_CHECK_MODULES([lxc_genesis_core], [lxc_genesis_core >= 1.1.2])
+  AC_DEFINE([ENABLE_LXC_GENESIS], [1], [Enable usage of lxc-genesis library to switch user/group and apply some linux hardening rules])
+fi
+
+AM_CONDITIONAL([ENABLE_LXC_GENESIS], [test "x$enable_lxc_genesis" = xyes])
+
 ### Enable dbus cookie sha1 authentication
 AC_ARG_ENABLE([dbus-cookie-sha1-authentication],
   [AS_HELP_STRING([--enable-dbus-cookie-sha1-authentication],
@@ -1847,6 +1860,7 @@ echo "
         'make check' socket dir:  ${TEST_SOCKET_DIR}
         Enable spy:               ${enable_spy}
         Enable hardening:         ${enable_hardened}
+        Enable lxc-genesis:       ${enable_lxc_genesis}
         Enable sha1 authentication: ${enable_dbus_cookie_sha1_authentication}
 "
 if test x$have_launchd = xyes; then

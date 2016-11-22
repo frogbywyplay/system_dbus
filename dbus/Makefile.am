@@ -297,6 +297,11 @@ libdbus_internal_la_CPPFLAGS = \
 	$(NULL)
 libdbus_internal_la_LIBADD=$(LIBDBUS_LIBS) $(SYSTEMD_LIBS)
 
+if ENABLE_LXC_GENESIS
+libdbus_internal_la_CFLAGS=-fPIE
+libdbus_internal_la_LDFLAGS=-pie
+endif ENABLE_LXC_GENESIS
+
 noinst_PROGRAMS =
 
 if DBUS_BUILD_TESTS
