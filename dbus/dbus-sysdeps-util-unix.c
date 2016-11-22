@@ -62,6 +62,10 @@
 #include <sys/syslimits.h>
 #endif
 
+#ifdef ENABLE_LXC_GENESIS
+#include <lxc_genesis.h>
+#endif
+
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
@@ -321,7 +325,26 @@ _dbus_verify_daemon_user (const char *user)
 
 /* The HAVE_LIBAUDIT case lives in selinux.c */
 #ifndef HAVE_LIBAUDIT
-#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+#ifdef ENABLE_LXC_GENESIS
+
+/**
+ * Changes the user/group via lxc_genesis_setup fonction.
+ *
+ * @param user (unused argument)
+ * @param error return location for errors
+ * @returns #TRUE if success otherwise program will exit with status
+ * EXIT_FAILURE.
+ */
+dbus_bool_t
+_dbus_change_to_daemon_user  (const char    *user,
+                              DBusError     *error)
+{
+  (void) user;
+  lxc_genesis_setup(); /* In failure case, program will exit with status EXIT_FAILURE */
+  return TRUE;
+}
+
+#elif defined ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
 
 /**
  * Set and switch the group identify with getresgid
@@ -506,7 +529,7 @@ _dbus_change_to_daemon_user  (const char    *user,
 
   return TRUE;
 }
-#endif /* ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION */
+#endif /* ENABLE_LXC_GENESIS */
 #endif /* !HAVE_LIBAUDIT */
 
 #ifdef HAVE_SETRLIMIT
