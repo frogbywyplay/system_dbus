@@ -22,6 +22,15 @@
 #include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef ENABLE_HARDENED
+int
+main (int argc, char *argv[])
+{
+  fprintf (stderr, "dbus-monitor support is disabled\n");
+  exit (1);
+}
+#else
 #include <string.h>
 
 #ifdef DBUS_WIN
@@ -413,4 +422,4 @@ main (int argc, char *argv[])
   fprintf (stderr, "Error: %s\n", error.message);
   exit (1);
 }
-
+#endif /* ENABLE_HARDENED */

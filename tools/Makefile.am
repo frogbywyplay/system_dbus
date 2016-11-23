@@ -15,6 +15,8 @@ bin_PROGRAMS = \
 	dbus-launch \
 	dbus-monitor \
 	dbus-send \
+	dbus-request-name \
+	dbus-wait-dbus \
 	$(NULL)
 
 if DBUS_UNIX
@@ -45,6 +47,12 @@ dbus_launch_SOURCES=				\
 	dbus-launch.h
 endif
 
+dbus_request_name_SOURCES= 			\
+	dbus-request-name.c
+
+dbus_wait_dbus_SOURCES= 			\
+	dbus-wait-dbus.c
+
 dbus_cleanup_sockets_SOURCES=			\
 	dbus-cleanup-sockets.c
 
@@ -66,6 +74,14 @@ dbus_uuidgen_LDADD = \
 
 dbus_launch_LDADD = \
 	$(DBUS_X_LIBS) \
+	$(NULL)
+
+dbus_request_name_LDADD = \
+	$(top_builddir)/dbus/libdbus-1.la \
+	$(NULL)
+
+dbus_wait_dbus_LDADD = \
+	$(top_builddir)/dbus/libdbus-1.la \
 	$(NULL)
 
 EXTRA_DIST = run-with-tmp-session-bus.sh strtoll.c strtoull.c

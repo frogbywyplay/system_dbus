@@ -22,6 +22,7 @@
  */
 
 #include <config.h>
+#include "config.h"
 #include "dbus-auth.h"
 #include "dbus-string.h"
 #include "dbus-list.h"
@@ -339,6 +340,17 @@ _dbus_auth_new (int size)
 {
   DBusAuth *auth;
   
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+  static DBusAtomic *counter = NULL;
+
+  if (counter == NULL) {
+    counter = dbus_new0 (DBusAtomic, 1);
+
+    if (counter == NULL)
+      goto  enomem_0;
+  }
+#endif /* ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION */
+
   auth = dbus_malloc0 (size);
   if (auth == NULL)
     return NULL;
@@ -374,6 +386,13 @@ _dbus_auth_new (int size)
   /* default context if none is specified */
   if (!_dbus_string_append (&auth->context, "org_freedesktop_general"))
     goto enomem_5;
+
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+  _dbus_atomic_inc (counter);
+
+  if (!_dbus_string_append_int (&auth->context, _dbus_atomic_get (counter)))
+    goto enomem_5;
+#endif /* ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION */
 
   auth->credentials = _dbus_credentials_new ();
   if (auth->credentials == NULL)
@@ -758,7 +777,10 @@ sha1_handle_second_client_response (DBusAuth         *auth,
 
   _dbus_verbose ("%s: authenticated client using DBUS_COOKIE_SHA1\n",
                  DBUS_AUTH_NAME (auth));
-  
+
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+  _dbus_keyring_delete(auth->keyring, NULL);
+#endif
   retval = TRUE;
   
  out_3:
@@ -2312,7 +2334,11 @@ _dbus_auth_client_new (void)
 
   /* Start the auth conversation by sending AUTH for our default
    * mechanism */
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+  if (!send_auth (auth, &all_mechanisms[1]))
+#else
   if (!send_auth (auth, &all_mechanisms[0]))
+#endif
     {
       _dbus_auth_unref (auth);
       return NULL;

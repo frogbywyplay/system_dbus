@@ -1703,6 +1703,48 @@ if test "x$enable_stats" = xyes; then
     [Define to enable bus daemon usage statistics])
 fi
 
+### Enable spy
+AC_ARG_ENABLE([spy],
+  [AS_HELP_STRING([--enable-spy],
+  [enable spy])],
+  [], [enable_spy=no])
+
+if test "x$enable_spy" = xyes; then
+  AC_DEFINE([ENABLE_SPY], [1],[Define to enable spy])
+fi
+
+AM_CONDITIONAL([ENABLE_SPY], [test "x$enable_spy" = xyes])
+
+### Enable hardened
+AC_ARG_ENABLE([hardened],
+  [AS_HELP_STRING([--enable-hardened],
+  [Enable hardening support])],
+  [], [enable_hardened=no])
+
+if test "x$enable_hardened" = xyes; then
+  AC_DEFINE([ENABLE_HARDENED], [1],[Enable hardening support])
+fi
+
+AM_CONDITIONAL([ENABLE_HARDENED], [test "x$enable_hardened" = xyes])
+
+### Enable dbus cookie sha1 authentication
+AC_ARG_ENABLE([dbus-cookie-sha1-authentication],
+  [AS_HELP_STRING([--enable-dbus-cookie-sha1-authentication],
+  [Enable hardening support])],
+  [], [enable_dbus_cookie_sha1_authentication=no])
+
+if test "x$enable_dbus_cookie_sha1_authentication" = xyes; then
+  AC_DEFINE([ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION], [1],[Enable hardening support])
+  DBUS_AUTH="DBUS_COOKIE_SHA1"
+else
+  DBUS_AUTH="EXTERNAL"
+fi
+
+AC_SUBST(DBUS_AUTH)
+AM_CONDITIONAL([ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION], [test "x$enable_dbus_cookie_sha1_authentication" = xyes])
+
+###
+
 AC_CONFIG_FILES([
 Doxyfile
 dbus/versioninfo.rc
@@ -1803,6 +1845,9 @@ echo "
 	System bus user:          ${DBUS_USER}
 	Session bus services dir: ${EXPANDED_DATADIR}/dbus-1/services
         'make check' socket dir:  ${TEST_SOCKET_DIR}
+        Enable spy:               ${enable_spy}
+        Enable hardening:         ${enable_hardened}
+        Enable sha1 authentication: ${enable_dbus_cookie_sha1_authentication}
 "
 if test x$have_launchd = xyes; then
         echo "        launchd agent dir:        ${LAUNCHD_AGENT_DIR}"

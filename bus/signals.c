@@ -22,6 +22,7 @@
  */
 
 #include <config.h>
+#include "config.h"
 #include "signals.h"
 #include "services.h"
 #include "utils.h"
@@ -215,6 +216,7 @@ match_rule_to_string (BusMatchRule *rule)
         goto nomem;
     }
 
+#ifndef ENABLE_HARDENED
   if (rule->flags & BUS_MATCH_CLIENT_IS_EAVESDROPPING)
     {
       if (_dbus_string_get_length (&str) > 0)
@@ -228,6 +230,7 @@ match_rule_to_string (BusMatchRule *rule)
             "true" : "false"))
         goto nomem;
     }
+#endif /* ENABLE_HARDENED */
 
   if (rule->flags & BUS_MATCH_ARGS)
     {
@@ -368,6 +371,7 @@ bus_match_rule_set_destination (BusMatchRule *rule,
   return TRUE;
 }
 
+#ifndef ENABLE_HARDENED
 void
 bus_match_rule_set_client_is_eavesdropping (BusMatchRule *rule,
                                             dbus_bool_t is_eavesdropping)
@@ -377,6 +381,7 @@ bus_match_rule_set_client_is_eavesdropping (BusMatchRule *rule,
   else
     rule->flags &= ~(BUS_MATCH_CLIENT_IS_EAVESDROPPING);
 }
+#endif /* ENABLE_HARDENED */
 
 dbus_bool_t
 bus_match_rule_set_path (BusMatchRule *rule,
@@ -1056,6 +1061,7 @@ bus_match_rule_parse (DBusConnection   *matches_go_to,
         }
       else if (strcmp (key, "eavesdrop") == 0)
         {
+#ifndef ENABLE_HARDENED
           /* do not detect "eavesdrop" being used more than once in rule:
            * 1) it's not possible, it's only in the flags
            * 2) it might be used twice to disable eavesdropping when it's
@@ -1078,6 +1084,7 @@ bus_match_rule_parse (DBusConnection   *matches_go_to,
                               value);
               goto failed;
             }
+#endif /* ENABLE_HARDENED */
         }
       else if (strncmp (key, "arg", 3) == 0)
         {
@@ -1686,8 +1693,10 @@ match_rule_matches (BusMatchRule    *rule,
   /* Don't bother re-matching features we've already checked implicitly. */
   flags = rule->flags & (~already_matched);
 
+#ifndef ENABLE_HARDENED
   if (flags & BUS_MATCH_CLIENT_IS_EAVESDROPPING)
     wants_to_eavesdrop = TRUE;
+#endif
 
   if (flags & BUS_MATCH_MESSAGE_TYPE)
     {

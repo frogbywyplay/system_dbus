@@ -22,6 +22,7 @@
  */
 
 #include <config.h>
+#include "config.h"
 #include "dbus-internals.h"
 #include "dbus-connection-internal.h"
 #include "dbus-nonce.h"
@@ -29,6 +30,9 @@
 #include "dbus-transport-protected.h"
 #include "dbus-watch.h"
 #include "dbus-credentials.h"
+#ifdef ENABLE_SPY
+#include "dbus-spy.h"
+#endif
 
 /**
  * @defgroup DBusTransportSocket DBusTransport implementations for sockets
@@ -543,7 +547,9 @@ do_writing (DBusTransport *transport)
 #if 0
       _dbus_verbose ("writing message %p\n", message);
 #endif
-      
+#ifdef ENABLE_SPY
+      _dbus_spy_dump_message (message, 1);
+#endif
       _dbus_message_get_network_data (message,
                                       &header, &body);
 

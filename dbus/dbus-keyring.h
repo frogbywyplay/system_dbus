@@ -23,6 +23,7 @@
 #ifndef DBUS_KEYRING_H
 #define DBUS_KEYRING_H
 
+#include "config.h"
 #include <dbus/dbus-macros.h>
 #include <dbus/dbus-errors.h>
 #include <dbus/dbus-string.h>
@@ -45,7 +46,9 @@ dbus_bool_t  _dbus_keyring_is_for_credentials  (DBusKeyring      *keyring,
 dbus_bool_t  _dbus_keyring_get_hex_key         (DBusKeyring      *keyring,
                                                 int               key_id,
                                                 DBusString       *hex_key);
-
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+dbus_bool_t _dbus_keyring_delete(DBusKeyring *keyring, DBusError *error);
+#endif
 
 DBUS_END_DECLS
 

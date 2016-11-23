@@ -23,6 +23,7 @@
  */
 
 #include <config.h>
+#include "config.h"
 #include "activation.h"
 #include "connection.h"
 #include "driver.h"
@@ -1818,6 +1819,7 @@ write_args_for_direction (DBusString *xml,
   return FALSE;
 }
 
+#ifndef ENABLE_HARDENED
 dbus_bool_t
 bus_driver_generate_introspect_string (DBusString *xml)
 {
@@ -1864,6 +1866,7 @@ bus_driver_generate_introspect_string (DBusString *xml)
 
   return TRUE;
 }
+#endif /* ! ENABLE_HARDENED */
 
 static dbus_bool_t
 bus_driver_handle_introspect (DBusConnection *connection,
@@ -1871,6 +1874,12 @@ bus_driver_handle_introspect (DBusConnection *connection,
                               DBusMessage    *message,
                               DBusError      *error)
 {
+#ifdef ENABLE_HARDENED
+  (void) connection;
+  (void) transaction;
+  (void) message;
+  (void) error;
+#else
   DBusString xml;
   DBusMessage *reply;
   const char *v_STRING;
@@ -1923,6 +1932,7 @@ bus_driver_handle_introspect (DBusConnection *connection,
     dbus_message_unref (reply);
 
   _dbus_string_free (&xml);
+#endif /* ENABLE_HARDENED */
 
   return FALSE;
 }

@@ -23,8 +23,8 @@
   <!-- Write a pid file -->
   <pidfile>@DBUS_SYSTEM_PID_FILE@</pidfile>
 
-  <!-- Only allow socket-credentials-based authentication -->
-  <auth>EXTERNAL</auth>
+  <!-- Only allow authentication : dbus-cookie-sha1-based, socket-credentials-based ...  -->
+  <auth>@DBUS_AUTH@</auth>
 
   <!-- Only listen on a local socket. (abstract=/path/to/socket 
        means use abstract namespace, don't really create filesystem 

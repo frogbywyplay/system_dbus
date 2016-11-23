@@ -197,6 +197,12 @@ DBUS_LIB_SOURCES=				\
 	dbus-watch.c				\
 	dbus-watch.h
 
+if ENABLE_SPY
+DBUS_LIB_SOURCES+=			\
+	dbus-spy.c				\
+	dbus-spy.h
+endif
+
 ### source code that goes in the installed client library
 ### AND is generic utility functionality used by the
 ### daemon or test programs (all symbols in here should

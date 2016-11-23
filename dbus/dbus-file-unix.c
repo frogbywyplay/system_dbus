@@ -24,6 +24,7 @@
 
 #include <config.h>
 
+#include "config.h"
 #include "dbus-protocol.h"
 #include "dbus-errors.h"
 #include "dbus-file.h"
@@ -36,6 +37,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+#include <pwd.h>
+#endif
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -315,6 +319,54 @@ _dbus_string_save_to_file (const DBusString *str,
   
   return retval;
 }
+
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+/** Makes the file readable by  specified user/group in the system.
+ *
+ * @param filename the filename
+ * @param error error location
+ * @returns #TRUE if the file's permissions could be changed.
+ */
+dbus_bool_t
+_dbus_make_file_only_user_group_readable(const DBusString *filename,
+                               DBusError *error,
+                               unsigned long client_uid)
+{
+  const char *filename_c;
+  struct passwd *result_uid;
+  mode_t file_mode = (S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP);
+
+  _DBUS_ASSERT_ERROR_IS_CLEAR (error);
+
+  filename_c = _dbus_string_get_const_data (filename);
+  if (chmod (filename_c, file_mode) == -1)
+    {
+      dbus_set_error (error,
+                      DBUS_ERROR_FAILED,
+                      "Could not change permissions of file %s: %s\n",
+                      filename_c,
+                      _dbus_strerror (errno));
+      return FALSE;
+    }
+
+  /** get process gid **/
+  if (!(result_uid = getpwuid(client_uid))) {
+      dbus_set_error (error, DBUS_ERROR_FAILED,
+                      "Failed to getpwuid filename %s: %s\n",
+                      filename_c, _dbus_strerror (errno));
+      return (FALSE);
+  }
+  /** chown directory gid **/
+  if (chown(filename_c, getuid(), result_uid->pw_gid) < 0 )
+  {
+      dbus_set_error (error, DBUS_ERROR_FAILED,
+                      "Failed to chown filename %s: %s\n",
+                      filename_c, _dbus_strerror (errno));
+      return (FALSE);
+  }
+  return TRUE;
+}
+#endif /* ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION */
 
 /** Makes the file readable by every user in the system.
  *

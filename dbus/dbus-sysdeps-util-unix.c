@@ -22,7 +22,9 @@
  *
  */
 
+#define _GNU_SOURCE
 #include <config.h>
+#include "config.h"
 #include "dbus-sysdeps.h"
 #include "dbus-sysdeps-unix.h"
 #include "dbus-internals.h"
@@ -46,10 +48,15 @@
 #include <sys/resource.h>
 #endif
 #include <grp.h>
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+#include <pwd.h>
+#endif
 #include <sys/socket.h>
 #include <dirent.h>
 #include <sys/un.h>
+#ifndef ENABLE_HARDENED
 #include <syslog.h>
+#endif
 
 #ifdef HAVE_SYS_SYSLIMITS_H
 #include <sys/syslimits.h>
@@ -314,6 +321,109 @@ _dbus_verify_daemon_user (const char *user)
 
 /* The HAVE_LIBAUDIT case lives in selinux.c */
 #ifndef HAVE_LIBAUDIT
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+
+/**
+ * Set and switch the group identify with getresgid
+ *
+ * @param groupname the groupname given
+ * @returns 0 if ok
+ */
+static int __dbus_set_gid(const char *groupname,
+                          DBusError  *error)
+{
+    struct group *result;
+    gid_t rgid, egid, sgid;
+
+    if (!(result = getgrnam(groupname)))
+      {
+        dbus_set_error (error, _dbus_error_from_errno (errno),
+                        "getgrnam failure for group '%s' : %s",
+                        groupname, _dbus_strerror (errno));
+        return 1;
+      }
+
+    if (setresgid(result->gr_gid, result->gr_gid, result->gr_gid))
+      {
+        dbus_set_error (error, _dbus_error_from_errno (errno),
+                        "setresgid failure for group '%s' : %s",
+                        groupname, _dbus_strerror (errno));
+        return 1;
+      }
+
+    if (getresgid(&rgid, &egid, &sgid))
+      {
+        dbus_set_error (error, _dbus_error_from_errno (errno),
+                        "getresuid failure for group '%s' : %s",
+                        groupname, _dbus_strerror (errno));
+        return 1;
+      }
+
+    if ((rgid != result->gr_gid) || (egid != result->gr_gid) || (sgid != result->gr_gid))
+      {
+        dbus_set_error (error, DBUS_ERROR_FAILED,
+                        "Failure of group switching for '%s'",
+                        groupname);
+        return 1;
+      }
+
+    return 0;
+}
+
+/**
+ * Set and switch the user identify with initgroups and getresuid
+ *
+ * @param username the username given
+ * @returns 0 if ok
+ */
+static int __dbus_set_uid(const char *username,
+                          DBusError  *error)
+{
+    struct passwd *result;
+    uid_t ruid, euid, suid;
+
+    if (!(result = getpwnam(username)))
+      {
+        dbus_set_error (error, _dbus_error_from_errno (errno),
+                        "getpwnam failure for user '%s' : %s",
+                        username, _dbus_strerror (errno));
+        return 1;
+      }
+
+    if (initgroups(result->pw_name, result->pw_gid))
+      {
+        dbus_set_error (error, _dbus_error_from_errno (errno),
+                        "initgroups failure for user '%s': %s",
+                        username, _dbus_strerror (errno));
+        return 1;
+      }
+
+    if (setresuid(result->pw_uid, result->pw_uid, result->pw_uid))
+      {
+        dbus_set_error (error, _dbus_error_from_errno (errno),
+                        "setresuid failure for user '%s' : %s",
+                        username, _dbus_strerror (errno));
+        return 1;
+      }
+
+    if (getresuid(&ruid, &euid, &suid))
+      {
+        dbus_set_error (error, _dbus_error_from_errno (errno),
+                        "getresuid failure for user '%s' : %s",
+                        username, _dbus_strerror (errno));
+        return 1;
+      }
+
+    if ((ruid != result->pw_uid) || (euid != result->pw_uid) || (suid != result->pw_uid))
+      {
+        dbus_set_error (error, DBUS_ERROR_FAILED,
+                        "Failure of user switching for '%s'",
+                        username);
+        return 1;
+      }
+    return 0;
+}
+
 /**
  * Changes the user and group the bus is running as.
  *
@@ -321,6 +431,31 @@ _dbus_verify_daemon_user (const char *user)
  * @param error return location for errors
  * @returns #FALSE on failure
  */
+dbus_bool_t
+_dbus_change_to_daemon_user  (const char    *user,
+                              DBusError     *error)
+{
+  const char *group = user;
+
+  if (__dbus_set_gid(group, error))
+    {
+      dbus_set_error (error, DBUS_ERROR_FAILED,
+                      "Failed to set GID to '%s'", group);
+      return FALSE;
+    }
+
+  if (__dbus_set_uid(user, error))
+    {
+      dbus_set_error (error, DBUS_ERROR_FAILED,
+                      "Failed to set UID to '%s'", user);
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+#else
+
 dbus_bool_t
 _dbus_change_to_daemon_user  (const char    *user,
                               DBusError     *error)
@@ -371,6 +506,7 @@ _dbus_change_to_daemon_user  (const char    *user,
 
   return TRUE;
 }
+#endif /* ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION */
 #endif /* !HAVE_LIBAUDIT */
 
 #ifdef HAVE_SETRLIMIT
@@ -512,11 +648,13 @@ _dbus_rlimit_free (DBusRLimit *lim)
 void
 _dbus_init_system_log (void)
 {
+#ifndef ENABLE_HARDENED
 #if HAVE_DECL_LOG_PERROR
   openlog ("dbus", LOG_PID | LOG_PERROR, LOG_DAEMON);
 #else
   openlog ("dbus", LOG_PID, LOG_DAEMON);
 #endif
+#endif /* ! ENABLE_HARDENED */
 }
 
 /**
@@ -530,6 +668,10 @@ _dbus_init_system_log (void)
 void
 _dbus_system_log (DBusSystemLogSeverity severity, const char *msg, ...)
 {
+#ifdef ENABLE_HARDENED
+  (void) severity;
+  (void) msg;
+#else
   va_list args;
 
   va_start (args, msg);
@@ -537,6 +679,7 @@ _dbus_system_log (DBusSystemLogSeverity severity, const char *msg, ...)
   _dbus_system_logv (severity, msg, args);
 
   va_end (args);
+#endif /* ENABLE_HARDENED */
 }
 
 /**
@@ -552,6 +695,11 @@ _dbus_system_log (DBusSystemLogSeverity severity, const char *msg, ...)
 void
 _dbus_system_logv (DBusSystemLogSeverity severity, const char *msg, va_list args)
 {
+#ifdef ENABLE_HARDENED
+  (void) severity;
+  (void) msg;
+  (void) args;
+#else
   int flags;
   switch (severity)
     {
@@ -585,6 +733,7 @@ _dbus_system_logv (DBusSystemLogSeverity severity, const char *msg, va_list args
 
   if (severity == DBUS_SYSTEM_LOG_FATAL)
     exit (1);
+#endif /* ENABLE_HARDENED */
 }
 
 /** Installs a UNIX signal handler
@@ -726,6 +875,16 @@ struct DBusDirIter
 };
 
 /**
+ * Internals of sorted directory iterator
+ */
+struct DBusSortedDirIter
+{
+  struct dirent **d; /**< The dirent** from scandir() */
+  int n; /**< d elements count */
+  int i; /**< The iterator position */
+};
+
+/**
  * Open a directory to iterate over.
  *
  * @param filename the directory name
@@ -763,6 +922,52 @@ _dbus_directory_open (const DBusString *filename,
     }
 
   iter->d = d;
+
+  return iter;
+}
+
+/**
+ * Open a sorted directory to iterate over.
+ *
+ * @param filename the directory name
+ * @param error exception return object or #NULL
+ * @returns new iterator, or #NULL on error
+ */
+DBusSortedDirIter*
+_dbus_sorted_directory_open (const DBusString *filename,
+                             DBusError        *error)
+{
+  struct dirent **d;
+  DBusSortedDirIter *iter;
+  const char *filename_c;
+  int n;
+
+  _DBUS_ASSERT_ERROR_IS_CLEAR (error);
+
+  filename_c = _dbus_string_get_const_data (filename);
+
+  n = scandir (filename_c, &d, NULL, alphasort);
+  if (n < 0)
+    {
+      dbus_set_error (error, _dbus_error_from_errno (errno),
+                      "Failed to scan directory \"%s\": %s",
+                      filename_c,
+                      _dbus_strerror (errno));
+      return NULL;
+    }
+  iter = dbus_new0 (DBusSortedDirIter, 1);
+  if (iter == NULL)
+    {
+      while (n--)
+          free (d[n]);
+      free (d);
+      dbus_set_error (error, DBUS_ERROR_NO_MEMORY,
+                      "Could not allocate memory for directory iterator");
+      return NULL;
+    }
+
+  iter->d = d;
+  iter->n = n;
 
   return iter;
 }
@@ -826,12 +1031,73 @@ _dbus_directory_get_next_file (DBusDirIter      *iter,
 }
 
 /**
+ * Get next file in the sorted directory. Will not return "." or
+ * ".." on UNIX. If an error occurs, the contents of "filename" are
+ * undefined. The error is never set if the function succeeds.
+ *
+ * This function is not re-entrant, and not necessarily thread-safe.
+ * Only use it for test code or single-threaded utilities.
+ *
+ * @param iter the iterator
+ * @param filename string to be set to the next file in the dir
+ * @param error return location for error
+ * @returns #TRUE if filename was filled in with a new filename
+ */
+dbus_bool_t
+_dbus_sorted_directory_get_next_file (DBusSortedDirIter      *iter,
+                                      DBusString             *filename,
+                                      DBusError              *error)
+{
+  struct dirent *ent;
+  int err;
+
+  _DBUS_ASSERT_ERROR_IS_CLEAR (error);
+
+ again:
+  if (iter->i == iter->n)
+    return FALSE;
+
+  ent = iter->d[iter->i++];
+
+  if (ent->d_name[0] == '.' &&
+           (ent->d_name[1] == '\0' ||
+            (ent->d_name[1] == '.' && ent->d_name[2] == '\0')))
+    goto again;
+  else
+    {
+      _dbus_string_set_length (filename, 0);
+      if (!_dbus_string_append (filename, ent->d_name))
+        {
+          dbus_set_error (error, DBUS_ERROR_NO_MEMORY,
+                          "No memory to read directory entry");
+          return FALSE;
+        }
+      else
+        {
+          return TRUE;
+        }
+    }
+}
+
+/**
  * Closes a directory iteration.
  */
 void
 _dbus_directory_close (DBusDirIter *iter)
 {
   closedir (iter->d);
+  dbus_free (iter);
+}
+
+/**
+ * Closes a sorted directory iteration.
+ */
+void
+_dbus_sorted_directory_close (DBusSortedDirIter *iter)
+{
+  while (iter->n--)
+    free (iter->d[iter->n]);
+  free (iter->d);
   dbus_free (iter);
 }
 

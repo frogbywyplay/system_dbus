@@ -2054,6 +2054,77 @@ _dbus_check_dir_is_private_to_user (DBusString *dir, DBusError *error)
   return TRUE;
 }
 
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+/**
+ * Checks to make sure the given directory is
+ * private to theprimary user / primary group
+ *
+ * @param dir the name of the directory
+ * @param error error return
+ * @returns #FALSE on failure
+ **/
+dbus_bool_t
+_dbus_check_dir_rights (DBusString *dir, DBusError *error, dbus_uid_t client_uid)
+{
+  const char *directory;
+  struct stat sb;
+  struct passwd *result_uid;
+  uint32_t is_client = 0;
+
+  _DBUS_ASSERT_ERROR_IS_CLEAR (error);
+
+  directory = _dbus_string_get_const_data (dir);
+
+  if (stat (directory, &sb) < 0)
+    {
+      dbus_set_error (error, _dbus_error_from_errno (errno),
+                      "%s", _dbus_strerror (errno));
+
+      return FALSE;
+    }
+
+    if (!(result_uid = getpwuid(client_uid)))
+    {
+        dbus_set_error(error, DBUS_ERROR_FAILED,
+                "Failed to getpwuid to check rights %s\n",
+                _dbus_strerror(errno));
+        return FALSE;
+    }
+
+    /** check others rights **/
+
+    if ((S_IROTH & sb.st_mode) || (S_IWOTH & sb.st_mode)
+            || (S_IXOTH & sb.st_mode))
+    {
+        dbus_set_error(error, DBUS_ERROR_FAILED,
+                "%s directory rights cannot ensure authentication (others can access)",
+                directory);
+        return FALSE;
+    }
+
+  /** check client or server **/
+  is_client = (strcmp(result_uid->pw_passwd,"messagebus") != 0);
+
+    if (is_client && ((result_uid->pw_gid != sb.st_gid)))
+    {
+        dbus_set_error(error, DBUS_ERROR_FAILED,
+                "%s directory rights cannot ensure authentication client rights problem client_uid(%d) getuid(%d)",
+                directory, client_uid, getuid());
+        return FALSE;
+    }
+
+    if (!is_client
+            && ((result_uid->pw_gid != sb.st_gid) || (sb.st_uid != getuid())))
+    {
+        dbus_set_error(error, DBUS_ERROR_FAILED,
+                "%s directory rights cannot ensure authentication server rights problem client_uid(%d) getuid(%d)",
+                directory, client_uid, getuid());
+        return FALSE;
+    }
+
+  return TRUE;
+}
+#endif /* ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION */
 static dbus_bool_t
 fill_user_info_from_passwd (struct passwd *p,
                             DBusUserInfo  *info,
@@ -2732,6 +2803,65 @@ _dbus_create_directory (const DBusString *filename,
     return TRUE;
 }
 
+#ifdef ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION
+/**
+ * Creates a directory; succeeds if the directory
+ * is created or already existed.
+ *
+ * @param filename directory filename
+ * @param error initialized error object
+ * @returns #TRUE on success
+ */
+dbus_bool_t
+_dbus_create_directory_for_authentication (const DBusString *filename,
+                        DBusError        *error, dbus_uid_t client_uid)
+{
+  const char *filename_c;
+  struct passwd *result_uid;
+
+  mode_t directory_mode = (S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP);
+  _DBUS_ASSERT_ERROR_IS_CLEAR (error);
+  filename_c = _dbus_string_get_const_data (filename);
+
+  /*** create directory ***/
+  if (mkdir (filename_c, directory_mode) < 0)
+    {
+      if (errno == EEXIST)
+        return (TRUE);
+
+      dbus_set_error (error, DBUS_ERROR_FAILED,
+                      "Failed to mkdir directory authent %s: %s\n",
+                      filename_c, _dbus_strerror (errno));
+      return (FALSE);
+    }
+  else {
+      _dbus_verbose (" %d %s directory %s\n",__LINE__,__FUNCTION__,filename_c);
+      if (chmod(filename_c, directory_mode) < 0) {
+          dbus_set_error (error, DBUS_ERROR_FAILED,
+                          "Failed to chmod directory authent %s: %s\n",
+                          filename_c, _dbus_strerror (errno));
+          return (FALSE);
+      }
+      /** get process gid **/
+      if (!(result_uid = getpwuid(client_uid))) {
+          dbus_set_error (error, DBUS_ERROR_FAILED,
+                          "Failed to getpwuid directory authent %s: %s\n",
+                          filename_c, _dbus_strerror (errno));
+          return (FALSE);
+      }
+      /** chown directory gid **/
+      if (chown(filename_c, (-1), result_uid->pw_gid) < 0 )
+      {
+          dbus_set_error (error, DBUS_ERROR_FAILED,
+                          "Failed to chown directory authent %s: uid : %d gid : %d : %s\n",
+                          filename_c, getuid(),result_uid->pw_gid,_dbus_strerror (errno));
+          return (FALSE);
+      }
+  }
+
+  return (TRUE);
+}
+#endif /* ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION */
 /**
  * Appends the given filename to the given directory.
  *
