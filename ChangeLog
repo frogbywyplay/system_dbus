@@ -1,4 +1,9 @@
 
+1.6.30.2 -- 05/12/2016
+- [SECU] [CONTAINER] dbus-daemon
+  - Add usage of lxc_genesis_setup function to switch user/group and set hardening environment.
+  - Add support of lxc_genesis in build system and add compilation options PIE for Linux Hardening.
+
 1.6.30.1 -- 23/11/2016
 - Use uniq context per authentication in order to create uniq cookie file per authentication.
 - Replace native process to switch the current user in order to use functions : initgroups, setresuid, setreguid, for sha1 authentication mode.
