@@ -84,6 +84,23 @@ dbus_wait_dbus_LDADD = \
 	$(top_builddir)/dbus/libdbus-1.la \
 	$(NULL)
 
+if ENABLE_LXC_GENESIS
+dbus_cleanup_sockets_CFLAGS=-fPIE
+dbus_cleanup_sockets_LDFLAGS=-pie
+dbus_send_CFLAGS=-fPIE
+dbus_send_LDFLAGS=-pie
+dbus_uuidgen_CFLAGS=-fPIE
+dbus_uuidgen_LDFLAGS=-pie
+dbus_monitor_CFLAGS=-fPIE
+dbus_monitor_LDFLAGS=-pie
+dbus_launch_CFLAGS=-fPIE
+dbus_launch_LDFLAGS=-pie
+dbus_request_name_CFLAGS=-fPIE
+dbus_request_name_LDFLAGS=-pie
+dbus_wait_dbus_CFLAGS=-fPIE
+dbus_wait_dbus_LDFLAGS=-pie
+endif ENABLE_LXC_GENESIS
+
 EXTRA_DIST = run-with-tmp-session-bus.sh strtoll.c strtoull.c
 CLEANFILES = 				\
 	run-with-tmp-session-bus.conf
