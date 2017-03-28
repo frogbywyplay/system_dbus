@@ -1,4 +1,7 @@
 
+1.6.30.3 -- 28/03/2017
+- add -fPIE and -pie compilation & link flags on tools binaries
+
 1.6.30.2 -- 05/12/2016
 - [SECU] [CONTAINER] dbus-daemon
   - Add usage of lxc_genesis_setup function to switch user/group and set hardening environment.
