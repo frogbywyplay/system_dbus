@@ -37,3 +37,13 @@
 # Functional tests results
 
 <Post the result of test-app, integration or manual tests>
+
+# Reviewers
+
+| @username |     name      
+|----------|---------------
+| @gforte   | Gabriel Forte
+| @dcaleca  | Daniel Caleca
+| @gstephan | Gael Stephan
+| @nmauny   | Nikolas Mauny
+
