@@ -167,6 +167,62 @@ void dbus_unix_setup_reload_pipe(BusContext *context)
 
 }
 
+void dbus_unix_action_reload(void)
+{
+    DBusString str;
+    char action[2] = { ACTION_RELOAD, '\0' };
+
+    _dbus_string_init_const (&str, action);
+    if ((reload_pipe[RELOAD_WRITE_END] > 0) &&
+        !_dbus_write_socket (reload_pipe[RELOAD_WRITE_END], &str, 0, 1))
+    {
+        /* If we receive SIGHUP often enough to fill the pipe buffer (4096
+         * times on old Linux, 65536 on modern Linux) before it can be
+         * drained, let's just warn and ignore. The configuration will be
+         * reloaded while draining the pipe buffer, which is what we
+         * wanted. It's harmless that it will be reloaded fewer times than
+         * we asked for, since the reload is delayed anyway, so new changes
+         * will be picked up.
+         *
+         * We use write() because _dbus_warn uses vfprintf, which isn't
+         * async-signal-safe.
+         *
+         * This is necessarily Unix-specific, but so are POSIX signals,
+         * so... */
+        static const char message[] =
+          "Unable to write to reload pipe - buffer full?\n";
+
+        if (write (STDERR_FILENO, message, strlen (message)) != strlen (message))
+        {
+            /* ignore failure to write out a warning */
+        }
+    }
+}
+
+void dbus_unix_action_quit(void)
+{
+    DBusString str;
+    char action[2] = { ACTION_QUIT, '\0' };
+    _dbus_string_init_const (&str, action);
+    if ((reload_pipe[RELOAD_WRITE_END] < 0) ||
+        !_dbus_write_socket (reload_pipe[RELOAD_WRITE_END], &str, 0, 1))
+    {
+        /* If we can't write to the socket, dying seems a more
+         * important response to SIGTERM than cleaning up sockets,
+         * so we exit. We'd use exit(), but that's not async-signal-safe,
+         * so we'll have to resort to _exit(). */
+        static const char message[] =
+          "Unable to write termination signal to pipe - buffer full?\n"
+          "Will exit instead.\n";
+
+        if (write (STDERR_FILENO, message, strlen (message)) != strlen (message))
+        {
+            /* ignore failure to write out a warning */
+        }
+        _exit (1);
+    }
+}
+
 void dbus_unix_signal_handler(int sig)
 {
   switch (sig)
@@ -177,62 +233,11 @@ void dbus_unix_signal_handler(int sig)
 #endif /* DBUS_BUS_ENABLE_DNOTIFY_ON_LINUX  */
 #ifdef SIGHUP
     case SIGHUP:
-      {
-        DBusString str;
-        char action[2] = { ACTION_RELOAD, '\0' };
-
-        _dbus_string_init_const (&str, action);
-        if ((reload_pipe[RELOAD_WRITE_END] > 0) &&
-            !_dbus_write_socket (reload_pipe[RELOAD_WRITE_END], &str, 0, 1))
-          {
-            /* If we receive SIGHUP often enough to fill the pipe buffer (4096
-             * times on old Linux, 65536 on modern Linux) before it can be
-             * drained, let's just warn and ignore. The configuration will be
-             * reloaded while draining the pipe buffer, which is what we
-             * wanted. It's harmless that it will be reloaded fewer times than
-             * we asked for, since the reload is delayed anyway, so new changes
-             * will be picked up.
-             *
-             * We use write() because _dbus_warn uses vfprintf, which isn't
-             * async-signal-safe.
-             *
-             * This is necessarily Unix-specific, but so are POSIX signals,
-             * so... */
-            static const char message[] =
-              "Unable to write to reload pipe - buffer full?\n";
-
-            if (write (STDERR_FILENO, message, strlen (message)) != strlen (message))
-              {
-                /* ignore failure to write out a warning */
-              }
-          }
-      }
+      dbus_unix_action_reload();
       break;
 #endif
-
     case SIGTERM:
-      {
-        DBusString str;
-        char action[2] = { ACTION_QUIT, '\0' };
-        _dbus_string_init_const (&str, action);
-        if ((reload_pipe[RELOAD_WRITE_END] < 0) ||
-            !_dbus_write_socket (reload_pipe[RELOAD_WRITE_END], &str, 0, 1))
-          {
-            /* If we can't write to the socket, dying seems a more
-             * important response to SIGTERM than cleaning up sockets,
-             * so we exit. We'd use exit(), but that's not async-signal-safe,
-             * so we'll have to resort to _exit(). */
-            static const char message[] =
-              "Unable to write termination signal to pipe - buffer full?\n"
-              "Will exit instead.\n";
-
-            if (write (STDERR_FILENO, message, strlen (message)) != strlen (message))
-              {
-                /* ignore failure to write out a warning */
-              }
-            _exit (1);
-          }
-      }
+      dbus_unix_action_quit();
       break;
     }
 }

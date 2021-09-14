@@ -24,6 +24,8 @@
 #include "bus.h"
 
 void dbus_unix_setup_reload_pipe(BusContext *context);
+void dbus_unix_action_reload(void);
+void dbus_unix_action_quit(void);
 void dbus_unix_signal_handler(int sig);
 
 #endif /* __DBUS_UNIX_H__ */
