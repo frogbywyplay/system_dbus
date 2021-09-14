@@ -1,0 +1,6 @@
+<service>
+    <name>D-Bus</name>
+    <cmdline>
+        <arg name="config-file" value="@appDataDir@/root/etc/dbus-1/system.conf" />
+    </cmdline>
+</service>

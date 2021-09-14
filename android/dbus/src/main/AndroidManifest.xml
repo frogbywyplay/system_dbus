@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (C) 2021 Wyplay, All Rights Reserved.
+This source code and any compilation or derivative thereof is the
+proprietary information of Wyplay and is confidential in nature.
+Under no circumstances is this software to be exposed to or placed under
+an Open Source License of any type without the expressed written permission
+of Wyplay.
+-->
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.wyplay.tvmiddleware.dbus">
+
+    <application>
+        <service
+            android:name=".DBusService"
+            android:process=":dbus_service"
+            android:enabled="true">
+        </service>
+    </application>
+
+</manifest>
