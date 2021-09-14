@@ -101,6 +101,10 @@ BUS_SOURCES=					\
 	utils.h					\
 	$(XML_SOURCES)
 
+if DBUS_UNIX
+BUS_SOURCES += dbus-unix.c
+endif
+
 dbus_daemon_SOURCES=				\
 	$(BUS_SOURCES)				\
 	main.c
