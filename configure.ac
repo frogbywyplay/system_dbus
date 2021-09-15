@@ -1756,6 +1756,14 @@ fi
 AC_SUBST(DBUS_AUTH)
 AM_CONDITIONAL([ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION], [test "x$enable_dbus_cookie_sha1_authentication" = xyes])
 
+### Enable android support
+AC_ARG_ENABLE(android,
+    [AS_HELP_STRING(
+        [--enable-android],
+        [Build the component as an Android native library instead of a daemon])
+    ], [], [enable_android=no])
+AM_CONDITIONAL(ENABLE_ANDROID, test x$enable_android = xyes)
+
 ###
 
 AC_CONFIG_FILES([
@@ -1862,6 +1870,7 @@ echo "
         Enable hardening:         ${enable_hardened}
         Enable lxc-genesis:       ${enable_lxc_genesis}
         Enable sha1 authentication: ${enable_dbus_cookie_sha1_authentication}
+        Enable Android support:   ${enable_android}
 "
 if test x$have_launchd = xyes; then
         echo "        launchd agent dir:        ${LAUNCHD_AGENT_DIR}"

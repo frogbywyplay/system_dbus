@@ -1,5 +1,4 @@
 configdir=$(sysconfdir)/dbus-1
-dbus_daemon_execdir = $(DBUS_DAEMONDIR)
 
 DBUS_BUS_LIBS = \
 	$(XML_LIBS) \
@@ -25,8 +24,6 @@ AM_CPPFLAGS = \
 
 # if assertions are enabled, improve backtraces
 AM_LDFLAGS = @R_DYNAMIC_LDFLAG@
-
-EFENCE=
 
 CONFIG_IN_FILES=				\
 	session.conf.in				\
@@ -105,21 +102,6 @@ if DBUS_UNIX
 BUS_SOURCES += dbus-unix.c
 endif
 
-dbus_daemon_SOURCES=				\
-	$(BUS_SOURCES)				\
-	main.c
-
-dbus_daemon_LDADD=					\
-	$(top_builddir)/dbus/libdbus-internal.la	\
-	$(EFENCE)					\
-	$(DBUS_BUS_LIBS)
-
-if ENABLE_LXC_GENESIS
-dbus_daemon_LDADD+=$(lxc_genesis_core_LIBS)
-dbus_daemon_CFLAGS=-fPIE
-dbus_daemon_LDFLAGS=-pie
-endif ENABLE_LXC_GENESIS
-
 LAUNCH_HELPER_SOURCES=				\
 	$(XML_SOURCES)				\
 	config-parser-common.c			\
@@ -184,17 +166,46 @@ bus_test_launch_helper_CPPFLAGS = \
 	-DACTIVATION_LAUNCHER_TEST	\
 	-DACTIVATION_LAUNCHER_DO_OOM
 
-noinst_PROGRAMS =
+if ENABLE_ANDROID
+lib_LTLIBRARIES = libdbus-jni.la
+
+libdbus_jni_la_SOURCES = $(BUS_SOURCES) dbus-jni.c
+libdbus_jni_la_CPPFLAGS = -fPIC -DPIC $(AM_CPPFLAGS)
+libdbus_jni_la_LDFLAGS = -module -avoid-version -llog
+libdbus_jni_la_LIBADD = $(top_builddir)/dbus/libdbus-internal.la $(DBUS_BUS_LIBS)
+else
+dbus_daemon_execdir = $(DBUS_DAEMONDIR)
 dbus_daemon_exec_PROGRAMS = dbus-daemon
+
+dbus_daemon_SOURCES = $(BUS_SOURCES) main.c
+dbus_daemon_LDADD = $(top_builddir)/dbus/libdbus-internal.la $(DBUS_BUS_LIBS)
+
+if ENABLE_LXC_GENESIS
+dbus_daemon_LDADD+=$(lxc_genesis_core_LIBS)
+dbus_daemon_CFLAGS=-fPIE
+dbus_daemon_LDFLAGS=-pie
+endif ENABLE_LXC_GENESIS
+
 if DBUS_UNIX
 libexec_PROGRAMS = dbus-daemon-launch-helper
+
+install-exec-hook:
+	if test `id -u` -eq 0; then \
+		chown root:$(DBUS_USER) $(DESTDIR)$(libexecdir)/dbus-daemon-launch-helper$(EXEEXT); \
+		chmod 4750 $(DESTDIR)$(libexecdir)/dbus-daemon-launch-helper$(EXEEXT); \
+	else \
+		echo "Not installing $(DESTDIR)$(libexecdir)/dbus-daemon-launch-helper binary setuid!"; \
+		echo "You'll need to manually set permissions to root:$(DBUS_USER) and permissions 4750"; \
+	fi
 endif DBUS_UNIX
+endif
 
 ## Note that TESTS has special meaning (stuff to use in make check).
 ## We don't actually want to run any of these tests until test/ has been
 ## compiled, so we don't put them in TESTS here; we run them in test/
 ## instead.
 
+noinst_PROGRAMS =
 if DBUS_BUILD_TESTS
 ## we use noinst_PROGRAMS not check_PROGRAMS so that we build
 ## even when not doing "make check"
@@ -258,17 +269,6 @@ if HAVE_SYSTEMD
 	ln -fs ../dbus.socket $(DESTDIR)$(systemdsystemunitdir)/sockets.target.wants/dbus.socket
 	$(mkinstalldirs) $(DESTDIR)$(systemdsystemunitdir)/multi-user.target.wants
 	ln -fs ../dbus.service $(DESTDIR)$(systemdsystemunitdir)/multi-user.target.wants/dbus.service
-endif
-
-if DBUS_UNIX
-install-exec-hook:
-	if test `id -u` -eq 0; then \
-		chown root:$(DBUS_USER) $(DESTDIR)$(libexecdir)/dbus-daemon-launch-helper$(EXEEXT); \
-		chmod 4750 $(DESTDIR)$(libexecdir)/dbus-daemon-launch-helper$(EXEEXT); \
-	else \
-		echo "Not installing $(DESTDIR)$(libexecdir)/dbus-daemon-launch-helper binary setuid!"; \
-		echo "You'll need to manually set permissions to root:$(DBUS_USER) and permissions 4750"; \
-	fi
 endif
 
 #### Init scripts fun
