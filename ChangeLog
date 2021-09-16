@@ -1,4 +1,12 @@
 
+1.6.30.4 -- 16/09/2021
+- Android: added a separated project to build the D-Bus Android Service.
+- Android: new build option used to build D-Bus as a native library instead of daemon.
+- Extract actions (reload/quit) from the "dbus-unix" signal handler.
+- Extract the "dbus-unix" module from the main daemon.
+- .gitlab/merge_request_templates/component.md: added reviewers settings [skip ci]
+- Create template for merge requests.
+
 1.6.30.3 -- 28/03/2017
 - add -fPIE and -pie compilation & link flags on tools binaries
 

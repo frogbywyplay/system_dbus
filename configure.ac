@@ -6,7 +6,7 @@ m4_define([dbus_minor_version], [6])
 m4_define([dbus_micro_version], [30])
 m4_define([dbus_version],
           [dbus_major_version.dbus_minor_version.dbus_micro_version])
-AC_INIT([dbus], [1.6.30.3],[https://bugs.freedesktop.org/enter_bug.cgi?product=dbus],[dbus])
+AC_INIT([dbus], [1.6.30.4],[https://bugs.freedesktop.org/enter_bug.cgi?product=dbus],[dbus])
 
 AC_CANONICAL_HOST
 
@@ -309,7 +309,7 @@ if test x$enable_compiler_coverage = xyes; then
 fi
 
 # glibc21.m4 serial 3
-dnl Copyright (C) 2000-2002, 2004 Free Software Foundation, Inc.
+dnl Copyright (C) 2000-2021 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
