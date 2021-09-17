@@ -17,6 +17,7 @@ public final class DBusNative {
         }
         private static native boolean start(Context ctx, String configFile);
         private static native boolean stop(Context ctx);
+        private static native String getVersion();
     }
 
     static boolean start(Context ctx, String configFile) {
@@ -29,5 +30,9 @@ public final class DBusNative {
         if (ctx == null)
             throw new IllegalArgumentException("context");
         return Native.stop(ctx);
+    }
+
+    static String getVersion() {
+        return Native.getVersion();
     }
 }

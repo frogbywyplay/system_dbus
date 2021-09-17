@@ -9,7 +9,6 @@ android {
         targetSdkVersion 30
         versionName project.pkg_version_name
         versionCode project.pkg_version_code.toInteger()
-        buildConfigField "String", "APP_VERSION", "\"${project.pkg_version_name}\""
     }
 
     buildTypes {

@@ -114,11 +114,6 @@ err_dbus_string_config_init:
     return JNI_FALSE;
 }
 
-/*
- * Class:     com_wyplay_tvmiddleware_dbus_DBusNative_Native
- * Method:    stop
- * Signature: (Landroid/content/Context;)Z
- */
 JNIEXPORT jboolean JNICALL Java_com_wyplay_tvmiddleware_dbus_DBusNative_00024Native_stop
   (JNIEnv *env, jclass cl, jobject ctx)
 {
@@ -136,4 +131,10 @@ JNIEXPORT jboolean JNICALL Java_com_wyplay_tvmiddleware_dbus_DBusNative_00024Nat
     LOG_INF("D-Bus service stopped.");
 
     return JNI_TRUE;
+}
+
+JNIEXPORT jstring JNICALL Java_com_wyplay_tvmiddleware_dbus_DBusNative_00024Native_getVersion
+  (JNIEnv *env, jclass cl)
+{
+    return (*env)->NewStringUTF(env, PACKAGE_VERSION);
 }

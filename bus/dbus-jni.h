@@ -32,6 +32,14 @@ JNIEXPORT jboolean JNICALL Java_com_wyplay_tvmiddleware_dbus_DBusNative_00024Nat
 JNIEXPORT jboolean JNICALL Java_com_wyplay_tvmiddleware_dbus_DBusNative_00024Native_stop
   (JNIEnv *, jclass, jobject);
 
+/*
+ * Class:     com_wyplay_tvmiddleware_dbus_DBusNative_Native
+ * Method:    getVersion
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_wyplay_tvmiddleware_dbus_DBusNative_00024Native_getVersion
+  (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif

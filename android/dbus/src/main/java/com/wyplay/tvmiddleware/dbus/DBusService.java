@@ -20,7 +20,7 @@ public class DBusService extends BaseService {
     @Override
     protected synchronized void start() {
         Log.i(TAG(), String.format("Starting \"%s\" (version %s)...",
-                getServiceInfo().getName(), BuildConfig.APP_VERSION));
+                getServiceInfo().getName(), DBusNative.getVersion()));
 
         final String configFile = getServiceInfo().getCmdlineArgs().get("config-file");
         DBusNative.start(this, configFile);
