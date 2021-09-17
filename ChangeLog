@@ -1,4 +1,7 @@
 
+1.6.30.5 -- 17/09/2021
+- Android: retrieved D-Bus version from the native library.
+
 1.6.30.4 -- 16/09/2021
 - Android: added a separated project to build the D-Bus Android Service.
 - Android: new build option used to build D-Bus as a native library instead of daemon.
