@@ -443,6 +443,8 @@ free_entry_data (DBusHashTable  *table,
     (* table->free_key_function) (entry->key);
   if (table->free_value_function)
     (* table->free_value_function) (entry->value);
+  entry->key = NULL;
+  entry->value = NULL;
 }
 
 static void
@@ -905,7 +907,7 @@ find_generic_function (DBusHashTable        *table,
   while (entry != NULL)
     {
       if ((compare_func == NULL && key == entry->key) ||
-          (compare_func != NULL && (* compare_func) (key, entry->key) == 0))
+          (compare_func != NULL && entry->key != NULL && (* compare_func) (key, entry->key) == 0))
         {
           if (bucket)
             *bucket = &(table->buckets[idx]);
