@@ -1,4 +1,9 @@
 
+1.6.30.6 -- 18/05/2022
+- Extra check and set freed key and value to null
+- DBusHash: Program a bit more defensively
+- DBusHash: Recalculate bucket used if the table is rebuilt
+
 1.6.30.5 -- 17/09/2021
 - Android: retrieved D-Bus version from the native library.
 
