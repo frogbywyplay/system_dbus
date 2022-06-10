@@ -166,13 +166,16 @@ bus_test_launch_helper_CPPFLAGS = \
 	-DACTIVATION_LAUNCHER_TEST	\
 	-DACTIVATION_LAUNCHER_DO_OOM
 
-if ENABLE_ANDROID
-lib_LTLIBRARIES = libdbus-jni.la
+if ENABLE_DAEMON_LIBRARY
+lib_LTLIBRARIES = libdbus-1-daemon.la
 
-libdbus_jni_la_SOURCES = $(BUS_SOURCES) dbus-jni.c
-libdbus_jni_la_CPPFLAGS = -fPIC -DPIC $(AM_CPPFLAGS)
-libdbus_jni_la_LDFLAGS = -module -avoid-version -llog
-libdbus_jni_la_LIBADD = $(top_builddir)/dbus/libdbus-internal.la $(DBUS_BUS_LIBS)
+libdbus_1_daemon_la_SOURCES = $(BUS_SOURCES) dbus-daemon.c
+libdbus_1_daemon_la_CPPFLAGS = -fPIC -DPIC $(AM_CPPFLAGS)
+libdbus_1_daemon_la_LDFLAGS = -module -avoid-version
+libdbus_1_daemon_la_LIBADD = $(top_builddir)/dbus/libdbus-internal.la $(DBUS_BUS_LIBS)
+
+dbusincludedir=$(includedir)/dbus-1.0/dbus
+dbusinclude_HEADERS = dbus-daemon.h
 else
 dbus_daemon_execdir = $(DBUS_DAEMONDIR)
 dbus_daemon_exec_PROGRAMS = dbus-daemon

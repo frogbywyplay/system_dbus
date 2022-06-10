@@ -3,6 +3,10 @@ SUBDIRS=dbus bus tools test doc
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = dbus-1.pc
 
+if ENABLE_DAEMON_LIBRARY
+pkgconfig_DATA += dbus-1-daemon.pc
+endif
+
 DISTCLEANFILES = 		\
 	dbus-1.pc
 

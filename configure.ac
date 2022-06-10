@@ -1756,13 +1756,13 @@ fi
 AC_SUBST(DBUS_AUTH)
 AM_CONDITIONAL([ENABLE_DBUS_COOKIE_SHA1_AUTHENTICATION], [test "x$enable_dbus_cookie_sha1_authentication" = xyes])
 
-### Enable android support
-AC_ARG_ENABLE(android,
+### Enable daemon API support
+AC_ARG_ENABLE(daemon-as-library,
     [AS_HELP_STRING(
-        [--enable-android],
-        [Build the component as an Android native library instead of a daemon])
-    ], [], [enable_android=no])
-AM_CONDITIONAL(ENABLE_ANDROID, test x$enable_android = xyes)
+        [--enable-daemon-as-library],
+        [Build an additional library which provides daemon API])
+    ], [], [enable_daemon_as_library=no])
+AM_CONDITIONAL(ENABLE_DAEMON_LIBRARY, test x$enable_daemon_as_library = xyes)
 
 ###
 
@@ -1787,6 +1787,7 @@ test/name-test/Makefile
 doc/Makefile
 doc/dbus-daemon.1
 dbus-1.pc
+dbus-1-daemon.pc
 dbus-1-uninstalled.pc
 test/data/valid-config-files/debug-allow-all.conf
 test/data/valid-config-files/debug-allow-all-sha1.conf
@@ -1870,7 +1871,7 @@ echo "
         Enable hardening:         ${enable_hardened}
         Enable lxc-genesis:       ${enable_lxc_genesis}
         Enable sha1 authentication: ${enable_dbus_cookie_sha1_authentication}
-        Enable Android support:   ${enable_android}
+        Enable daemon as library: ${enable_daemon_as_library}
 "
 if test x$have_launchd = xyes; then
         echo "        launchd agent dir:        ${LAUNCHD_AGENT_DIR}"
