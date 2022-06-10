@@ -6,7 +6,7 @@ m4_define([dbus_minor_version], [6])
 m4_define([dbus_micro_version], [30])
 m4_define([dbus_version],
           [dbus_major_version.dbus_minor_version.dbus_micro_version])
-AC_INIT([dbus], [1.6.30.6],[https://bugs.freedesktop.org/enter_bug.cgi?product=dbus],[dbus])
+AC_INIT([dbus], [1.6.30.7],[https://bugs.freedesktop.org/enter_bug.cgi?product=dbus],[dbus])
 
 AC_CANONICAL_HOST
 

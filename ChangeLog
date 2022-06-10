@@ -1,4 +1,7 @@
 
+1.6.30.7 -- 10/06/2022
+- Replaced Android support by a new build option "daemon-as-library".
+
 1.6.30.6 -- 18/05/2022
 - Extra check and set freed key and value to null
 - DBusHash: Program a bit more defensively
