@@ -1,4 +1,7 @@
 
+1.6.30.8 -- 13/06/2022
+- Revert wrong changes on the default system.conf.in.
+
 1.6.30.7 -- 10/06/2022
 - Replaced Android support by a new build option "daemon-as-library".
 
